@@ -1,5 +1,20 @@
 import json
-from flask import Flask,render_template,request,redirect,flash,url_for
+from flask import Flask, render_template, request, redirect, url_for, flash, get_flashed_messages
+
+def reduce_points(club_name, points_to_deduct):
+    for club in clubs:
+        if club['name'] == club_name:
+            current_points = int(club['points'])
+            print("Current points:", current_points)
+            print("Points to deduct:", points_to_deduct)
+            if current_points >= points_to_deduct:
+                club['points'] = str(current_points - points_to_deduct)
+            else:
+                club['points'] = '0'
+            return
+
+
+
 
 
 def loadClubs():
@@ -22,35 +37,36 @@ clubs = loadClubs()
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    messages = get_flashed_messages()
+    return render_template('index.html', messages=messages)
+
 
 @app.route('/showSummary', methods=['POST'])
 def showSummary():
-    entered_email = request.form['email']
-
-    # Vérifie si l'e-mail est dans la liste des clubs
-    if any(club['email'] == entered_email for club in clubs):
-        # Si oui, récupère le club correspondant
-        club = next(club for club in clubs if club['email'] == entered_email)
-        return render_template('welcome.html', club=club, competitions=competitions)
-    else:
-        # Si l'e-mail n'est pas dans la liste des clubs, affiche un message demandant de saisir un e-mail déjà référencé
-        flash('Invalid email. Please enter a registered email.')
-        # Ne redirige pas immédiatement, laisse la page actuelle (index.html) être rendue
+    email = request.form['email']
+    if not email:
+        flash('Please enter your email.')
         return redirect(url_for('index'))
+
+    club = [club for club in clubs if club['email'] == email]
+    if not club:
+        flash('Email not found in the database.')
+        return redirect(url_for('index'))
+    
+    club = club[0]
+    return render_template('welcome.html', club=club, competitions=competitions)
 
 
 
 @app.route('/book/<competition>/<club>')
-def book(competition, club):
-    foundClub = next((c for c in clubs if c['name'] == club), None)
-    foundCompetition = next((c for c in competitions if c['name'] == competition), None)
+def book(competition,club):
+    foundClub = [c for c in clubs if c['name'] == club][0]
+    foundCompetition = [c for c in competitions if c['name'] == competition][0]
     if foundClub and foundCompetition:
-        return render_template('booking.html', club=foundClub, competition=foundCompetition)
+        return render_template('booking.html',club=foundClub,competition=foundCompetition)
     else:
         flash("Something went wrong-please try again")
         return render_template('welcome.html', club=club, competitions=competitions)
-
 
 
 @app.route('/purchasePlaces', methods=['POST'])
@@ -58,6 +74,11 @@ def purchasePlaces():
     competition_name = request.form['competition']
     club_name = request.form['club']
     places_required = int(request.form['places'])
+
+    # Vérifier que le nombre de places demandées est positif
+    if places_required <= 0:
+        flash('Please enter a valid number of places (greater than zero).')
+        return redirect(url_for('book', competition=competition_name, club=club_name))  # Rediriger vers la page de réservation
 
     # Recherche de la compétition et du club dans la liste des compétitions et des clubs
     competition = next((c for c in competitions if c['name'] == competition_name), None)
@@ -82,9 +103,7 @@ def purchasePlaces():
     else:
         flash('Competition or club not found!')
 
-    return render_template('welcome.html', club=club, competitions=competitions)
-
-
+    return render_template('booking.html', club=club, competition=competition)  # Rendre la page de réservation avec le message d'erreur
 
 
 # TODO: Add route for points display
@@ -92,5 +111,4 @@ def purchasePlaces():
 
 @app.route('/logout')
 def logout():
-    flash('You have been logged out.')
     return redirect(url_for('index'))
