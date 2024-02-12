@@ -1,6 +1,5 @@
 import json
-from flask import Flask, render_template, request, redirect, url_for, flash, get_flashed_messages
-
+from flask import Flask,render_template,request,redirect,flash,url_for
 
 
 def loadClubs():
@@ -23,62 +22,68 @@ clubs = loadClubs()
 
 @app.route('/')
 def index():
-    messages = get_flashed_messages()
-    return render_template('index.html', messages=messages)
-
+    return render_template('index.html')
 
 @app.route('/showSummary', methods=['POST'])
 def showSummary():
-    email = request.form['email']
-    if not email:
-        flash('Please enter your email.')
-        return redirect(url_for('index'))
+    entered_email = request.form['email']
 
-    club = [club for club in clubs if club['email'] == email]
-    if not club:
-        flash('Email not found in the database.')
+    # Vérifie si l'e-mail est dans la liste des clubs
+    if any(club['email'] == entered_email for club in clubs):
+        # Si oui, récupère le club correspondant
+        club = next(club for club in clubs if club['email'] == entered_email)
+        return render_template('welcome.html', club=club, competitions=competitions)
+    else:
+        # Si l'e-mail n'est pas dans la liste des clubs, affiche un message demandant de saisir un e-mail déjà référencé
+        flash('Invalid email. Please enter a registered email.')
+        # Ne redirige pas immédiatement, laisse la page actuelle (index.html) être rendue
         return redirect(url_for('index'))
-
-    club = club[0]
-    return render_template('welcome.html', club=club, competitions=competitions)
 
 
 
 @app.route('/book/<competition>/<club>')
-def book(competition,club):
-    foundClub = [c for c in clubs if c['name'] == club][0]
-    foundCompetition = [c for c in competitions if c['name'] == competition][0]
+def book(competition, club):
+    foundClub = next((c for c in clubs if c['name'] == club), None)
+    foundCompetition = next((c for c in competitions if c['name'] == competition), None)
     if foundClub and foundCompetition:
-        return render_template('booking.html',club=foundClub,competition=foundCompetition)
+        return render_template('booking.html', club=foundClub, competition=foundCompetition)
     else:
         flash("Something went wrong-please try again")
         return render_template('welcome.html', club=club, competitions=competitions)
+
 
 
 @app.route('/purchasePlaces', methods=['POST'])
 def purchasePlaces():
     competition_name = request.form['competition']
     club_name = request.form['club']
-    places_requested = request.form['places']
+    places_required = int(request.form['places'])
 
-    if not places_requested:
-        flash('Please enter the number of places you want to book.')
-        return redirect(url_for('book', competition=competition_name, club=club_name))
+    # Recherche de la compétition et du club dans la liste des compétitions et des clubs
+    competition = next((c for c in competitions if c['name'] == competition_name), None)
+    club = next((c for c in clubs if c['name'] == club_name), None)
 
-    competition = [c for c in competitions if c['name'] == competition_name][0]
-    club = [c for c in clubs if c['name'] == club_name][0]
+    if competition and club:
+        # Vérifier s'il y a suffisamment de places disponibles dans la compétition
+        if int(competition['numberOfPlaces']) >= places_required:
+            # Déduire les points du club
+            club_points = int(club['points'])
+            if club_points >= places_required:
+                club_points -= places_required
+                club['points'] = str(club_points)  # Mettre à jour le nombre de points du club
+                # Mettre à jour le nombre de places disponibles dans la compétition
+                competition['numberOfPlaces'] = str(int(competition['numberOfPlaces']) - places_required)
+                # Message de succès
+                flash('Great-booking complete!')
+            else:
+                flash('Insufficient points for booking!')
+        else:
+            flash('Insufficient places available!')
+    else:
+        flash('Competition or club not found!')
 
-    if int(places_requested) <= 0:
-        flash('Please enter a valid number of places.')
-        return redirect(url_for('book', competition=competition_name, club=club_name))
+    return render_template('welcome.html', club=club, competitions=competitions)
 
-    if int(places_requested) > int(competition['numberOfPlaces']):
-        flash('Not enough places available for booking.')
-        return redirect(url_for('book', competition=competition_name, club=club_name))
-
-    competition['numberOfPlaces'] = int(competition['numberOfPlaces']) - int(places_requested)
-    flash('Booking successful!')
-    return redirect(url_for('index'))
 
 
 
@@ -87,4 +92,5 @@ def purchasePlaces():
 
 @app.route('/logout')
 def logout():
+    flash('You have been logged out.')
     return redirect(url_for('index'))
