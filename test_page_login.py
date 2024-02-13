@@ -1,32 +1,46 @@
 import unittest
-from flask import Flask, render_template
 from server import app
 
+
 class TestLoginPage(unittest.TestCase):
-    
     def setUp(self):
         self.app = app.test_client()
         self.app.testing = True
 
-    def test_page_loads_successfully(self):
+    def test_login_page_status_code(self):
         response = self.app.get('/')
         self.assertEqual(response.status_code, 200)
 
-    def test_page_title(self):
-        response = self.app.get('/')
-        self.assertIn(b'<title>GUDLFT Registration</title>', response.data)
+    def test_login_with_valid_credentials(self):
+        response = self.app.post('/showSummary', data=dict(email='john@simplylift.co'))
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b'Welcome, john@simplylift.co', response.data)
 
-    def test_form_present(self):
-        response = self.app.get('/')
-        self.assertIn(b'<form action="showSummary" method="post">', response.data)
+    def test_login_with_empty_email(self):
+        response = self.app.post('/showSummary', data=dict(email=''))
+        self.assertEqual(response.status_code, 302)
 
-    def test_email_input_present(self):
-        response = self.app.get('/')
-        self.assertIn(b'<input type="email" name="email" id=""/>', response.data)
+    def test_login_with_unknown_email(self):
+        response = self.app.post('/showSummary', data=dict(email='unknown@example.com'))
+        self.assertEqual(response.status_code, 302)
 
-    def test_submit_button_present(self):
+    def test_login_with_invalid_email_format(self):
+        response = self.app.post('/showSummary', data=dict(email='invalid_email_format'))
+        self.assertEqual(response.status_code, 302)
+
+    def test_login_with_insufficient_points(self):
+        response = self.app.post('/showSummary', data=dict(email='admin@irontemple.com'))
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn(b'Insufficient points for booking!', response.data)
+
+    def test_login_page_post_method(self):
+        response = self.app.post('/')
+        self.assertEqual(response.status_code, 405)
+
+    def test_login_page_get_method(self):
         response = self.app.get('/')
-        self.assertIn(b'<button type="submit">Enter</button>', response.data)
+        self.assertEqual(response.status_code, 200)
+
 
 if __name__ == '__main__':
     unittest.main()
