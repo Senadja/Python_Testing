@@ -1,4 +1,5 @@
 import json
+from datetime import datetime
 from flask import Flask, render_template, request, redirect, url_for, flash, get_flashed_messages
 
 def loadClubs():
@@ -9,12 +10,10 @@ def loadClubs():
             club['reserved'] = {}  # Initialiser 'reserved' pour chaque club
         return listOfClubs
 
-
 def loadCompetitions():
     with open('competitions.json') as comps:
         listOfCompetitions = json.load(comps)['competitions']
         return listOfCompetitions
-
 
 app = Flask(__name__)
 app.secret_key = 'something_special'
@@ -26,7 +25,6 @@ clubs = loadClubs()
 def index():
     messages = get_flashed_messages()
     return render_template('index.html', messages=messages)
-
 
 @app.route('/showSummary', methods=['POST'])
 def showSummary():
@@ -43,17 +41,24 @@ def showSummary():
     club = club[0]
     return render_template('welcome.html', club=club, competitions=competitions)
 
-
 @app.route('/book/<competition>/<club>')
 def book(competition, club):
     foundClub = next((c for c in clubs if c['name'] == club), None)
     foundCompetition = next((c for c in competitions if c['name'] == competition), None)
+    
+    # Vérifier si l'événement est dans le passé
+    event_date = datetime.strptime(foundCompetition['date'], '%Y-%m-%d %H:%M:%S')
+    current_date = datetime.now()
+
+    if event_date < current_date:
+        flash("You cannot register for this event as it has already passed.")
+        return redirect(url_for('index'))
+    
     if foundClub and foundCompetition:
         return render_template('booking.html', club=foundClub, competition=foundCompetition)
     else:
         flash("Something went wrong-please try again")
         return render_template('welcome.html', club=club, competitions=competitions)
-
 
 @app.route('/purchasePlaces', methods=['POST'])
 def purchasePlaces():
@@ -109,12 +114,10 @@ def purchasePlaces():
 
     return render_template('welcome.html', club=club, competitions=competitions)
 
-
 @app.route('/logout')
 def logout():
     flash('You have been logged out.')
     return redirect(url_for('index'))
-
 
 if __name__ == "__main__":
     app.run(debug=True)
