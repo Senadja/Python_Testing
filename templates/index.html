@@ -1,26 +1,261 @@
+
+<!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GUDLFT Registration</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css?family=Raleway:400,700');
+
+        *,
+        *:before,
+        *:after {
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            font-family: 'Raleway', sans-serif;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+
+        .container {
+    position: fixed;
+    width: 100%;
+    height: 100vh;
+    overflow: hidden;
+         }
+
+        .top,
+        .bottom {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: 1;
+        }
+
+        .top:before,
+        .top:after,
+        .bottom:before,
+        .bottom:after {
+            content: '';
+            display: block;
+            position: absolute;
+            width: 200vmax;
+            height: 200vmax;
+            top: 50%;
+            left: 50%;
+            margin-top: -100vmax;
+            transform-origin: 0 50%;
+            transition: all 0.5s cubic-bezier(0.445, 0.05, 0, 1);
+            z-index: 10;
+            opacity: 0.65;
+            transition-delay: 0.2s;
+        }
+
+        .top:before {
+            transform: rotate(45deg);
+            background: #e46569;
+        }
+
+        .top:after {
+            transform: rotate(135deg);
+            background: #ecaf81;
+        }
+
+        .bottom:before {
+            transform: rotate(-45deg);
+            background: #60b8d4;
+        }
+
+        .bottom:after {
+            transform: rotate(-135deg);
+            background: #3745b5;
+        }
+
+        .center {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 30px;
+            opacity: 0;
+            transition: all 0.5s cubic-bezier(0.445, 0.05, 0, 1);
+            transition-delay: 0s;
+            color: #333;
+            z-index: 2; /* Assure que le formulaire est au-dessus des pseudo-éléments */
+        }
+
+        .center input {
+            width: 100%;
+            padding: 15px;
+            margin: 5px;
+            border-radius: 1px;
+            border: 1px solid #ccc;
+            font-family: inherit;
+        }
+
+        .container:hover .top:before,
+        .container:hover .top:after,
+        .container:hover .bottom:before,
+        .container:hover .bottom:after {
+            margin-left: 200px;
+            transform-origin: -200px 50%;
+            transition-delay: 0s;
+        }
+
+        .container:hover .center {
+            opacity: 1;
+            transition-delay: 0.2s;
+        }
+
+        button {
+            background-color: #0f3460;
+            color: #fff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s ease-in-out;
+        }
+
+        button:hover {
+            background-color: #092031;
+        }
+        .flash-message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #333;
+            color: #fff;
+            padding: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            text-align: center;
+        }
+        
+         /* Positionnement du tableau */
+         table {
+            margin-top: 400px; /* Espacement du haut */
+            border-collapse: collapse; /* Fusion des bordures des cellules */
+            width: 80%; /* Largeur du tableau */
+            margin-left: auto; /* Centrage horizontal */
+            margin-right: auto; /* Centrage horizontal */
+        }
+
+        th, td {
+            border: 1px solid #ddd; /* Bordure des cellules */
+            padding: 8px; /* Espacement interne */
+            text-align: left; /* Alignement du texte à gauche */
+        }
+
+        th {
+            background-color: #f2f2f2; /* Couleur de fond des en-têtes */
+            color: #333; /* Couleur du texte des en-têtes */
+        }
+
+        tr:nth-child(even) {
+            background-color: #f2f2f2; /* Couleur de fond des lignes paires */
+        }
+
+    </style>
 </head>
+
 <body>
-    <h1>Welcome to the GUDLFT Registration Portal!</h1>
-    {% with messages = get_flashed_messages() %}
+    <section class="container">
+        <div class="top"></div>
+        <div class="bottom"></div>
+        <div class="center">
+            <h2>Please Sign In</h2>
+            <input type="email" id="email" placeholder="email">
+            <h2>&nbsp;</h2>
+            <button type="button" onclick="submitForm()">Enter</button>
+        </div>
+        {% with messages = get_flashed_messages() %}
         {% if messages %}
-            <div class="alert alert-danger" role="alert">
-                {% for message in messages %}
-                    {{ message }}
-                {% endfor %}
-            </div>
+        <div>
+            {% for message in messages %}
+            <p>{{ message }}</p>
+            {% endfor %}
+        </div>
         {% endif %}
-    {% endwith %}
-    Please enter your secretary email to continue:
-    <form action="showSummary" method="post">
-        <label for="email">Email:</label>
-        <input type="email" name="email" id=""/>
-        <button type="submit">Enter</button>
-    </form>
+        {% endwith %}
+    </section>
+    <table>
+        <thead>
+            <tr>
+                <th>Club Name</th>
+                <th>Email</th>
+                <th>Points</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Simply Lift</td>
+                <td>john@simplylift.co</td>
+                <td>13</td>
+            </tr>
+            <tr>
+                <td>Iron Temple</td>
+                <td>admin@irontemple.com</td>
+                <td>4</td>
+            </tr>
+            <tr>
+                <td>She Lifts</td>
+                <td>kate@shelifts.co.uk</td>
+                <td>12</td>
+            </tr>
+        </tbody>
+    </table>
+    
+    <script>
+        function submitForm() {
+            var emailInput = document.getElementById("email");
+            var emailValue = emailInput.value;
+
+            // Vérification rapide si l'e-mail est vide
+            if (!emailValue.trim()) {
+                alert("Veuillez entrer votre e-mail.");
+                return;
+            }
+
+            // Créer un formulaire invisible
+            var form = document.createElement("form");
+            form.setAttribute("method", "post");
+            form.setAttribute("action", "showSummary");
+
+            // Créer un champ d'entrée pour l'e-mail
+            var emailField = document.createElement("input");
+            emailField.setAttribute("type", "hidden");
+            emailField.setAttribute("name", "email");
+            emailField.setAttribute("value", emailValue);
+
+            // Ajouter le champ d'entrée au formulaire
+            form.appendChild(emailField);
+
+            // Ajouter le formulaire à la page et le soumettre
+            document.body.appendChild(form);
+            form.submit();
+        }
+    </script>
+
+    
 </body>
 
 </html>
